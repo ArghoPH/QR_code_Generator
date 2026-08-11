@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        #app {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 100%;
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 0.95em;
+        }
+
+        .type-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .type-btn {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            color: #555;
+        }
+
+        .type-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .type-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        input[type="text"],
+        input[type="url"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="number"],
+        textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-family: inherit;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="url"]:focus,
+        input[type="email"]:focus,
+        input[type="tel"]:focus,
+        input[type="number"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .qr-output {
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: flex-start;
+        }
+
+        #qrcode {
+            border-radius: 10px;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+
+        .qr-info {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .qr-info p {
+            color: #666;
+            font-size: 0.9em;
+            margin: 5px 0;
+        }
+
+        .qr-info strong {
+            color: #333;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .btn-group button {
+            flex: 1;
+            padding: 12px 15px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .btn-download {
+            background: #52c41a;
+            color: white !important;
+        }
+
+        .btn-download:hover {
+            background: #45a70d;
+            box-shadow: 0 3px 10px rgba(82, 196, 26, 0.3);
+        }
+
+        .btn-copy {
+            background: #1890ff;
+            color: white !important;
+        }
+
+        .btn-copy:hover {
+            background: #0a5ed9;
+            box-shadow: 0 3px 10px rgba(24, 144, 255, 0.3);
+        }
+
+        .btn-clear {
+            background: #ff4d4f;
+            color: white !important;
+        }
+
+        .btn-clear:hover {
+            background: #f5222d;
+            box-shadow: 0 3px 10px rgba(255, 77, 79, 0.3);
+        }
+
+        .placeholder {
+            text-align: center;
+            color: #999;
+            padding: 50px 20px;
+            width: 100%;
+        }
+
+        .placeholder-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .success-message {
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            color: #52c41a;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        .error-message {
+            background: #fff2f0;
+            border: 1px solid #ffccc7;
+            color: #ff4d4f;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        .size-selector {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .size-option {
+            padding: 10px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            font-size: 0.85em;
+        }
+
+        .size-option:hover {
+            border-color: #667eea;
+        }
+
+        .size-option.selected {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .type-selector {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+
+            .size-selector {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .helper-text {
+            font-size: 0.8em;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .color-picker-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .color-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .color-input input[type="color"] {
+            width: 50px;
+            height: 40px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.3s ease;
+        }
+
+        .fade-enter-from, .fade-leave-to {
+            opacity: 0;
+        }
+
+        .style-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .style-btn {
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            color: #555;
+            text-align: center;
+        }
+
+        .style-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .style-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .logo-upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        .logo-upload-area:hover {
+            background: #f0f2ff;
+            border-color: #5568d3;
+        }
+
+        .logo-upload-area.has-logo {
+            border-color: #52c41a;
+            background: #f6ffed;
+        }
+
+        .logo-upload-input {
+            display: none;
+        }
+
+        .logo-preview {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .logo-preview img {
+            max-width: 80px;
+            max-height: 80px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            padding: 5px;
+        }
+
+        .logo-remove-btn {
+            padding: 6px 12px;
+            background: #ff4d4f;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s ease;
+        }
+
+        .logo-remove-btn:hover {
+            background: #f5222d;
+        }
+
+        .logo-size-slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .logo-info {
+            background: #e6f7ff;
+            border-left: 4px solid #1890ff;
+            padding: 10px 15px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: #0050b3;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>QR Code Generator</h1>
+            <p>Generate QR codes for any type of data</p>
+        </header>
+
+        <div class="container">
+            <!-- Input Section -->
+            <div class="card">
+                <h2>Create QR Code</h2>
+
+                <!-- Type Selector -->
+                <div class="form-group">
+                    <label>QR Code Type</label>
+                    <div class="type-selector">
+                        <button 
+                            v-for="type in qrTypes" 
+                            :key="type.id"
+                            :class="['type-btn', { active: selectedType === type.id }]"
+                            @click="selectType(type.id)"
+                        >
+                            {{ type.icon }} {{ type.label }}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Input Fields Based on Type -->
+                <div v-if="selectedType === 'url'" class="form-group">
+                    <label>Website URL</label>
+                    <input v-model="formData.url" type="url" placeholder="https://example.com" @input="updateQR">
+                    <p class="helper-text">Enter the complete URL including http:// or https://</p>
+                </div>
+
+                <div v-if="selectedType === 'text'" class="form-group">
+                    <label>Text</label>
+                    <textarea v-model="formData.text" placeholder="Enter any text here..." @input="updateQR"></textarea>
+                </div>
+
+                <div v-if="selectedType === 'email'" class="form-group">
+                    <label>Email Address</label>
+                    <input v-model="formData.email" type="email" placeholder="example@email.com" @input="updateQR">
+                </div>
+
+                <div v-if="selectedType === 'email'" class="form-group">
+                    <label>Subject (Optional)</label>
+                    <input v-model="formData.emailSubject" type="text" placeholder="Email subject" @input="updateQR">
+                </div>
+
+                <div v-if="selectedType === 'email'" class="form-group">
+                    <label>Message (Optional)</label>
+                    <textarea v-model="formData.emailBody" placeholder="Email body" @input="updateQR"></textarea>
+                </div>
+
+                <div v-if="selectedType === 'phone'" class="form-group">
+                    <label>Phone Number</label>
+                    <input v-model="formData.phone" type="tel" placeholder="+1234567890" @input="updateQR">
+                    <p class="helper-text">Include country code for international numbers</p>
+                </div>
+
+                <div v-if="selectedType === 'whatsapp'" class="form-group">
+                    <label>WhatsApp Phone Number</label>
+                    <input v-model="formData.whatsapp" type="tel" placeholder="+1234567890" @input="updateQR">
+                    <p class="helper-text">Include country code (e.g., +1 for USA)</p>
+                </div>
+
+                <div v-if="selectedType === 'whatsapp'" class="form-group">
+                    <label>Message (Optional)</label>
+                    <textarea v-model="formData.whatsappMessage" placeholder="WhatsApp message" @input="updateQR"></textarea>
+                </div>
+
+                <div v-if="selectedType === 'sms'" class="form-group">
+                    <label>Phone Number</label>
+                    <input v-model="formData.smsPhone" type="tel" placeholder="+1234567890" @input="updateQR">
+                </div>
+
+                <div v-if="selectedType === 'sms'" class="form-group">
+                    <label>Message</label>
+                    <textarea v-model="formData.smsMessage" placeholder="SMS message" @input="updateQR"></textarea>
+                </div>
+
+                <div v-if="selectedType === 'facebook'" class="form-group">
+                    <label>Facebook Profile URL or ID</label>
+                    <input v-model="formData.facebook" type="text" placeholder="https://facebook.com/username or page_id" @input="updateQR">
+                </div>
+
+                <div v-if="selectedType === 'instagram'" class="form-group">
+                    <label>Instagram Account</label>
+                    <input v-model="formData.instagram" type="text" placeholder="username (without @)" @input="updateQR">
+                    <p class="helper-text">Enter just the username</p>
+                </div>
+
+                <div v-if="selectedType === 'youtube'" class="form-group">
+                    <label>YouTube URL</label>
+                    <input v-model="formData.youtube" type="url" placeholder="https://youtube.com/watch?v=..." @input="updateQR">
+                </div>
+
+                <div v-if="selectedType === 'drive'" class="form-group">
+                    <label>Google Drive Link</label>
+                    <input v-model="formData.drive" type="url" placeholder="https://drive.google.com/..." @input="updateQR">
+                    <p class="helper-text">Paste the shareable Google Drive link</p>
+                </div>
+
+                <div v-if="selectedType === 'vcardField'" class="form-group">
+                    <label>Full Name</label>
+                    <input v-model="formData.vcardName" type="text" placeholder="John Doe" @input="updateQR">
+                </div>
+
+                <div v-if="selectedType === 'vcardField'" class="form-group">
+                    <div class="input-row">
+                        <div>
+                            <label>Phone</label>
+                            <input v-model="formData.vcardPhone" type="tel" placeholder="+1234567890" @input="updateQR">
+                        </div>
+                        <div>
+                            <label>Email</label>
+                            <input v-model="formData.vcardEmail" type="email" placeholder="john@example.com" @input="updateQR">
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="selectedType === 'vcardField'" class="form-group">
+                    <label>Organization</label>
+                    <input v-model="formData.vcardOrg" type="text" placeholder="Company Name" @input="updateQR">
+                </div>
+
+                <div v-if="selectedType === 'vcardField'" class="form-group">
+                    <label>Website</label>
+                    <input v-model="formData.vcardWebsite" type="url" placeholder="https://example.com" @input="updateQR">
+                </div>
+
+                <!-- Size Selector -->
+                <div class="form-group">
+                    <label>QR Code Size</label>
+                    <div class="size-selector">
+                        <div 
+                            v-for="size in [100, 150, 200, 300]" 
+                            :key="size"
+                            :class="['size-option', { selected: qrSize === size }]"
+                            @click="qrSize = size; updateQR()"
+                        >
+                            {{ size }}×{{ size }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Color Selector -->
+                <div class="form-group">
+                    <label>Colors</label>
+                    <div class="color-picker-group">
+                        <div class="color-input">
+                            <label style="width: 60px;">Dark:</label>
+                            <input type="color" v-model="'#' + darkColor" @input="darkColor = $event.target.value.replace('#', '')" @change="updateQR">
+                        </div>
+                        <div class="color-input">
+                            <label style="width: 60px;">Light:</label>
+                            <input type="color" v-model="'#' + lightColor" @input="lightColor = $event.target.value.replace('#', '')" @change="updateQR">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Output Section -->
+            <div class="card qr-output">
+                <h2>QR Code Preview</h2>
+                
+                <div v-if="message" :class="['success-message', { 'error-message': errorMessage }]">
+                    {{ message }}
+                </div>
+
+                <div v-if="qrGenerated" class="qr-info">
+                    <p><strong>QR Code Generated!</strong></p>
+                    <p style="font-size: 0.8em; margin-top: 8px;">{{ getQRInfo() }}</p>
+                </div>
+
+                <img v-if="qrGenerated" :src="qrImageUrl" :alt="'QR Code for ' + getQRInfo()" style="border-radius: 10px; padding: 20px; background: white; box-shadow: 0 5px 20px rgba(0,0,0,0.1); margin: 0 auto 15px; display: block; max-width: 100%;">
+
+                <div v-if="!qrGenerated" class="placeholder">
+                    <div class="placeholder-icon">📱</div>
+                    <p>Your QR code will appear here</p>
+                    <p style="font-size: 0.8em; color: #bbb; margin-top: 10px;">Fill in the details and we'll generate a QR code</p>
+                </div>
+
+                <div v-if="qrGenerated" class="btn-group">
+                    <button class="btn-download" @click="downloadQR">📥 Download</button>
+                    <button class="btn-copy" @click="copyQRData">📋 Copy</button>
+                    <button class="btn-clear" @click="clearQR">🗑️ Clear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+
+        createApp({
+            setup() {
+                const selectedType = ref('url');
+                const qrSize = ref(200);
+                const darkColor = ref('000000');
+                const lightColor = ref('FFFFFF');
+                const qrGenerated = ref(false);
+                const qrImageUrl = ref('');
+                const message = ref('');
+                const errorMessage = ref(false);
+
+                const qrTypes = [
+                    { id: 'url', label: 'URL', icon: '🌐' },
+                    { id: 'text', label: 'Text', icon: '📝' },
+                    { id: 'email', label: 'Email', icon: '✉️' },
+                    { id: 'phone', label: 'Phone', icon: '📱' },
+                    { id: 'sms', label: 'SMS', icon: '💬' },
+                    { id: 'whatsapp', label: 'WhatsApp', icon: '💬' },
+                    { id: 'facebook', label: 'Facebook', icon: '👤' },
+                    { id: 'instagram', label: 'Instagram', icon: '📸' },
+                    { id: 'youtube', label: 'YouTube', icon: '🎥' },
+                    { id: 'drive', label: 'Drive', icon: '☁️' },
+                    { id: 'vcardField', label: 'vCard', icon: '🆔' },
+                ];
+
+                const formData = ref({
+                    url: '',
+                    text: '',
+                    email: '',
+                    emailSubject: '',
+                    emailBody: '',
+                    phone: '',
+                    whatsapp: '',
+                    whatsappMessage: '',
+                    smsPhone: '',
+                    smsMessage: '',
+                    facebook: '',
+                    instagram: '',
+                    youtube: '',
+                    drive: '',
+                    vcardName: '',
+                    vcardPhone: '',
+                    vcardEmail: '',
+                    vcardOrg: '',
+                    vcardWebsite: '',
+                });
+
+                const selectType = (type) => {
+                    selectedType.value = type;
+                    message.value = '';
+                    updateQR();
+                };
+
+                const getQRData = () => {
+                    switch(selectedType.value) {
+                        case 'url':
+                            return formData.value.url;
+                        case 'text':
+                            return formData.value.text;
+                        case 'email': {
+                            let mailto = `mailto:${formData.value.email}`;
+                            const params = [];
+                            if (formData.value.emailSubject) params.push(`subject=${encodeURIComponent(formData.value.emailSubject)}`);
+                            if (formData.value.emailBody) params.push(`body=${encodeURIComponent(formData.value.emailBody)}`);
+                            if (params.length) mailto += '?' + params.join('&');
+                            return mailto;
+                        }
+                        case 'phone':
+                            return `tel:${formData.value.phone}`;
+                        case 'sms': {
+                            let sms = `sms:${formData.value.smsPhone}`;
+                            if (formData.value.smsMessage) sms += `?body=${encodeURIComponent(formData.value.smsMessage)}`;
+                            return sms;
+                        }
+                        case 'whatsapp': {
+                            let wa = `https://wa.me/${formData.value.whatsapp.replace(/\D/g, '')}`;
+                            if (formData.value.whatsappMessage) wa += `?text=${encodeURIComponent(formData.value.whatsappMessage)}`;
+                            return wa;
+                        }
+                        case 'facebook':
+                            return `https://facebook.com/${formData.value.facebook}`;
+                        case 'instagram':
+                            return `https://instagram.com/${formData.value.instagram}`;
+                        case 'youtube':
+                            return formData.value.youtube;
+                        case 'drive':
+                            return formData.value.drive;
+                        case 'vcardField': {
+                            let vcard = 'BEGIN:VCARD\nVERSION:3.0\n';
+                            if (formData.value.vcardName) vcard += `FN:${formData.value.vcardName}\n`;
+                            if (formData.value.vcardPhone) vcard += `TEL:${formData.value.vcardPhone}\n`;
+                            if (formData.value.vcardEmail) vcard += `EMAIL:${formData.value.vcardEmail}\n`;
+                            if (formData.value.vcardOrg) vcard += `ORG:${formData.value.vcardOrg}\n`;
+                            if (formData.value.vcardWebsite) vcard += `URL:${formData.value.vcardWebsite}\n`;
+                            vcard += 'END:VCARD';
+                            return vcard;
+                        }
+                        default:
+                            return '';
+                    }
+                };
+
+                const updateQR = () => {
+                    const data = getQRData();
+                    
+                    if (!data || data.trim() === '') {
+                        qrGenerated.value = false;
+                        qrImageUrl.value = '';
+                        return;
+                    }
+
+                    try {
+                        // Using QR Server API (free, reliable, no library needed)
+                        const encodedData = encodeURIComponent(data);
+                        const colorDark = darkColor.value.replace('#', '');
+                        const colorLight = lightColor.value.replace('#', '');
+                        
+                        qrImageUrl.value = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize.value}x${qrSize.value}&data=${encodedData}&color=${colorDark}&bgcolor=${colorLight}`;
+                        qrGenerated.value = true;
+                        message.value = '';
+                        errorMessage.value = false;
+                    } catch (error) {
+                        qrGenerated.value = false;
+                        message.value = 'Error: ' + error.message;
+                        errorMessage.value = true;
+                        console.error('QR Code Error:', error);
+                    }
+                };
+
+                const downloadQR = () => {
+                    if (qrImageUrl.value) {
+                        const link = document.createElement('a');
+                        link.href = qrImageUrl.value;
+                        link.download = `qr-code-${Date.now()}.png`;
+                        link.click();
+                        message.value = '✅ QR Code downloaded successfully!';
+                        errorMessage.value = false;
+                        setTimeout(() => message.value = '', 3000);
+                    }
+                };
+
+                const copyQRData = () => {
+                    const data = getQRData();
+                    navigator.clipboard.writeText(data).then(() => {
+                        message.value = '✅ QR data copied to clipboard!';
+                        errorMessage.value = false;
+                        setTimeout(() => message.value = '', 3000);
+                    }).catch(() => {
+                        message.value = '❌ Failed to copy to clipboard';
+                        errorMessage.value = true;
+                    });
+                };
+
+                const clearQR = () => {
+                    formData.value = {
+                        url: '',
+                        text: '',
+                        email: '',
+                        emailSubject: '',
+                        emailBody: '',
+                        phone: '',
+                        whatsapp: '',
+                        whatsappMessage: '',
+                        smsPhone: '',
+                        smsMessage: '',
+                        facebook: '',
+                        instagram: '',
+                        youtube: '',
+                        drive: '',
+                        vcardName: '',
+                        vcardPhone: '',
+                        vcardEmail: '',
+                        vcardOrg: '',
+                        vcardWebsite: '',
+                    };
+                    qrGenerated.value = false;
+                    qrImageUrl.value = '';
+                    message.value = '';
+                };
+
+                const getQRInfo = () => {
+                    const typeLabel = qrTypes.find(t => t.id === selectedType.value)?.label || 'QR Code';
+                    return `${typeLabel} QR Code (${qrSize.value}×${qrSize.value}px)`;
+                };
+
+                return {
+                    selectedType,
+                    qrSize,
+                    darkColor,
+                    lightColor,
+                    qrGenerated,
+                    qrImageUrl,
+                    message,
+                    errorMessage,
+                    qrTypes,
+                    formData,
+                    selectType,
+                    updateQR,
+                    downloadQR,
+                    copyQRData,
+                    clearQR,
+                    getQRInfo
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
